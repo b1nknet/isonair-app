@@ -123,7 +123,7 @@ function wireCard(card, info) {
   card.dataset.channelId = info.channelId;
   card.addEventListener('click', (e) => {
     if (e.target.classList.contains('remove-btn')) return;
-    window.chzzk.openChannel(info.channelId);
+    window.chzzk.openChannel(info.channelId, info.isLive);
   });
   const rm = card.querySelector('.remove-btn');
   if (rm) rm.addEventListener('click', (e) => {

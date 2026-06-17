@@ -213,9 +213,13 @@ ipcMain.handle('set-settings', (_e, partial) => {
 });
 
 ipcMain.handle('export-channels', async () => {
+  // Local timestamp, filesystem-safe (no colons): YYYY-MM-DD_HH-MM-SS.
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  const stamp = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
   const { canceled, filePath } = await dialog.showSaveDialog(win, {
     title: '채널 목록 내보내기',
-    defaultPath: 'chzzk-channels.json',
+    defaultPath: `chzzk-channels-${stamp}.json`,
     filters: [{ name: 'JSON', extensions: ['json'] }],
   });
   if (canceled || !filePath) return { ok: false, canceled: true };
@@ -256,8 +260,11 @@ ipcMain.handle('fetch-all-channels', async (_e, channelIds) => {
   return Promise.all(channelIds.map(fetchChannelInfo));
 });
 
-ipcMain.handle('open-channel', (_e, channelId) => {
-  shell.openExternal(`https://chzzk.naver.com/${channelId}`);
+ipcMain.handle('open-channel', (_e, channelId, isLive) => {
+  // Live channels go straight to the player at /live/<id>; otherwise the
+  // channel home page.
+  const path = isLive ? `live/${channelId}` : channelId;
+  shell.openExternal(`https://chzzk.naver.com/${path}`);
 });
 
 ipcMain.on('close-app', () => app.quit());
