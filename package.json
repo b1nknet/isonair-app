@@ -23,6 +23,7 @@
   "build": {
     "appId": "com.chzzk.widget",
     "productName": "Chzzk Widget",
+    "artifactName": "Chzzk-Widget-${version}-${arch}.${ext}",
     "files": [
       "src/**/*",
       "package.json"
@@ -53,7 +54,8 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Chzzk-Widget-Setup-${version}.${ext}"
     }
   }
 }
