@@ -6,6 +6,28 @@ const https = require('https');
 const CHANNELS_PATH = path.join(app.getPath('userData'), 'channels.json');
 const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
 
+// One-time migration: the app was renamed "Chzzk Widget" -> "isonair", which
+// changes the userData directory (Electron derives it from productName). On the
+// first run of the renamed build, copy the old channels/settings over so
+// existing users keep their data. Best-effort; failure just starts fresh.
+function migrateLegacyUserData() {
+  try {
+    const dir = app.getPath('userData');
+    const legacyDir = path.join(app.getPath('appData'), 'Chzzk Widget');
+    if (legacyDir === dir) return;
+    for (const file of ['channels.json', 'settings.json']) {
+      const src = path.join(legacyDir, file);
+      const dest = path.join(dir, file);
+      if (fs.existsSync(src) && !fs.existsSync(dest)) {
+        fs.mkdirSync(dir, { recursive: true });
+        fs.copyFileSync(src, dest);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 const DEFAULT_SETTINGS = {
   opacity: 1,
   alwaysOnTop: true,
@@ -161,6 +183,7 @@ ipcMain.handle('restart-to-update', () => {
 });
 
 app.whenReady().then(() => {
+  migrateLegacyUserData();
   createWindow();
   setupAutoUpdate();
 });

@@ -1,4 +1,4 @@
-# 치지직 위젯 (Chzzk Widget)
+# isonair — 치지직 라이브 위젯
 
 **한국어** · [English](docs/README_en.md)
 

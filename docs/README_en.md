@@ -1,4 +1,4 @@
-# Chzzk Widget (치지직 위젯)
+# isonair — Chzzk live widget
 
 [한국어](../README.md) · **English**
 

@@ -21,8 +21,8 @@
     "electron-builder": "^26.0.12"
   },
   "build": {
-    "appId": "com.chzzk.widget",
-    "productName": "Chzzk Widget",
+    "appId": "net.b1nk.isonair",
+    "productName": "isonair",
     "artifactName": "isonair-${version}-${arch}.${ext}",
     "files": [
       "src/**/*",

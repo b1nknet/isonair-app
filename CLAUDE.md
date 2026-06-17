@@ -25,6 +25,7 @@ Three processes, classic Electron split with context isolation:
 ### Data flow & persistence
 
 - Two JSON files live in Electron's `userData` dir (not the repo): `channels.json` (a bare array of channel-id strings) and `settings.json` (merged over `DEFAULT_SETTINGS`). `loadJson`/`saveJson` swallow errors and fall back to defaults — reads are cheap and always re-read from disk.
+- The `userData` dir is derived from `productName`. The app was renamed `Chzzk Widget` → `isonair`, so `migrateLegacyUserData()` (run once at `whenReady`, before any read) copies the old `channels.json`/`settings.json` from the legacy `.../Chzzk Widget` dir into the new one. `appId` was also rebranded (`com.chzzk.widget` → `net.b1nk.isonair`); changing it means a pre-rename install won't auto-update in place (acceptable — single user), but the userData migration still carries that user's data across.
 - The renderer holds the source-of-truth arrays in memory (`channels`, `lastInfos`) and persists by calling `saveChannels` after every mutation. Render order always follows the persisted `channels` order — after any fetch, `lastInfos` is rebuilt by mapping `channels` over an id→info map so reordering/filtering never desync.
 - Settings have two IPC shapes: `set-opacity`, `set-always-on-top`, and `set-ui-scale` (webContents zoom factor) have dedicated handlers because they also drive the `BrowserWindow`; everything else (`hideOffline`, `viewMode`) goes through the generic partial-merge `set-settings`.
 
