@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('chzzk', {
+  platform: process.platform,
   getChannels: () => ipcRenderer.invoke('get-channels'),
   saveChannels: (channels) => ipcRenderer.invoke('save-channels', channels),
   getSettings: () => ipcRenderer.invoke('get-settings'),

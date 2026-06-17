@@ -1,13 +1,14 @@
 {
   "name": "isonair-app",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Chzzk stream info widget",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder",
     "dist:mac": "electron-builder --mac",
-    "dist:win": "electron-builder --win"
+    "dist:win": "electron-builder --win",
+    "icon": "electron scripts/render-icon.js"
   },
   "keywords": [],
   "author": "",
@@ -41,12 +42,14 @@
     "mac": {
       "category": "public.app-category.utilities",
       "identity": null,
+      "icon": "build/icon.png",
       "target": [
         "dmg",
         "zip"
       ]
     },
     "win": {
+      "icon": "build/icon.png",
       "target": [
         "nsis",
         "zip"

@@ -143,6 +143,14 @@ function createWindow() {
 // Uses electron-updater against the `publish` config in package.json
 // (GitHub provider). Only meaningful in a packaged, installed app — in a
 // dev run there is no update feed, so we no-op.
+//
+// macOS is intentionally excluded: in-place auto-update there goes through
+// Squirrel.Mac, which validates the downloaded app's code signature before
+// swapping it in. Our builds are unsigned (no Apple Developer ID), so that
+// validation always fails ("Code signature did not pass validation"). Instead
+// the renderer does its own version check via get-latest-version and offers a
+// manual download link to the GitHub release. Windows (NSIS) has no such
+// signature requirement, so it keeps full auto-update.
 
 let autoUpdater = null;
 
@@ -154,6 +162,7 @@ function sendUpdateStatus(status, payload) {
 
 function setupAutoUpdate() {
   if (!app.isPackaged) return; // nothing to update against in dev
+  if (process.platform === 'darwin') return; // notify-only on macOS, see above
   try {
     ({ autoUpdater } = require('electron-updater'));
   } catch {

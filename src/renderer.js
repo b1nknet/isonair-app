@@ -616,10 +616,18 @@ document.getElementById('menu-import').addEventListener('click', async () => {
 
 // --- updates -------------------------------------------------------------
 
+// macOS can't auto-install unsigned builds via Squirrel.Mac, so it gets a
+// notify-only flow: the action button opens the GitHub release for a manual
+// download instead of triggering an in-place update.
+const IS_MAC = window.chzzk.platform === 'darwin';
+let bannerAction = null; // 'restart' (Windows) | 'download' (macOS)
+let pendingReleaseUrl = null;
+
 let bannerTimer = null;
-function showBanner(text, withRestart = false, autoHideMs = 0) {
+function showBanner(text, withButton = false, autoHideMs = 0, btnLabel = '재시작') {
   updateText.textContent = text;
-  updateRestart.classList.toggle('hidden', !withRestart);
+  updateRestart.textContent = btnLabel;
+  updateRestart.classList.toggle('hidden', !withButton);
   updateBanner.classList.remove('hidden');
   clearTimeout(bannerTimer);
   if (autoHideMs > 0) {
@@ -647,10 +655,19 @@ async function checkUpdates() {
     return;
   }
   if (compareVersions(latest.version, currentVersion) > 0) {
-    showBanner(`새 버전 v${latest.version} 사용 가능 (현재 v${currentVersion})`);
-    // Packaged build: trigger the actual download (progress/restart banners
-    // follow via onUpdateStatus). Dev: no-op, so this message stays.
-    window.chzzk.checkForUpdates();
+    if (IS_MAC) {
+      // Notify-only: Squirrel.Mac can't install our unsigned build, so point
+      // the user at the release page to download and replace the app manually.
+      bannerAction = 'download';
+      pendingReleaseUrl = latest.url;
+      showBanner(`새 버전 v${latest.version} 사용 가능 (현재 v${currentVersion})`, true, 0, '다운로드');
+    } else {
+      bannerAction = 'restart';
+      showBanner(`새 버전 v${latest.version} 사용 가능 (현재 v${currentVersion})`);
+      // Packaged build: trigger the actual download (progress/restart banners
+      // follow via onUpdateStatus). Dev: no-op, so this message stays.
+      window.chzzk.checkForUpdates();
+    }
   } else {
     showBanner(`최신 버전입니다 (v${currentVersion})`, false, 4000);
   }
@@ -658,14 +675,22 @@ async function checkUpdates() {
 
 document.getElementById('menu-update').addEventListener('click', checkUpdates);
 
-updateRestart.addEventListener('click', () => window.chzzk.restartToUpdate());
+updateRestart.addEventListener('click', () => {
+  if (bannerAction === 'download' && pendingReleaseUrl) {
+    window.chzzk.openExternal(pendingReleaseUrl);
+  } else {
+    window.chzzk.restartToUpdate();
+  }
+});
 
+// These events only fire on Windows now — macOS never starts the Squirrel
+// updater, so it stays on the manual-download banner from checkUpdates().
 window.chzzk.onUpdateStatus((d) => {
   switch (d.status) {
     case 'checking': showBanner('업데이트 확인 중...'); break;
     case 'available': showBanner(`새 버전 ${d.version} 발견, 다운로드 중...`); break;
     case 'downloading': showBanner(`다운로드 중... ${d.percent ?? 0}%`); break;
-    case 'downloaded': showBanner(`버전 ${d.version} 준비 완료 — 재시작하여 적용`, true); break;
+    case 'downloaded': bannerAction = 'restart'; showBanner(`버전 ${d.version} 준비 완료 — 재시작하여 적용`, true); break;
     case 'none': showBanner('최신 버전입니다', false, 3000); break;
     case 'error': showBanner(`업데이트 오류: ${d.message ?? ''}`, false, 5000); break;
   }

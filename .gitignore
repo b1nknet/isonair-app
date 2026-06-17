@@ -4,7 +4,10 @@ node_modules/
 # Build output
 dist/
 out/
-build/
+# build/ is electron-builder's buildResources dir; ignore its contents but keep
+# the committed app icon (generated from src/img/icon.svg via `npm run icon`).
+build/*
+!build/icon.png
 
 # Logs
 npm-debug.log*
