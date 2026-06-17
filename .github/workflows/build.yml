@@ -39,24 +39,53 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Publish to a GitHub Release only when building a v* tag; otherwise
-      # just build so the artifacts can be downloaded from the run.
+      # Never publish from the matrix itself — two platforms publishing
+      # concurrently race and create duplicate draft releases. We only build
+      # here (electron-builder still emits latest*.yml + blockmaps for
+      # auto-update) and hand the artifacts to the single release job below.
       - name: Build
-        run: npx electron-builder ${{ matrix.args }} --publish ${{ startsWith(github.ref, 'refs/tags/v') && 'always' || 'never' }}
+        run: npx electron-builder ${{ matrix.args }} --publish never
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Unsigned build: don't let electron-builder try to sign with any
           # certificate that happens to be on the runner.
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-build
+          name: ${{ matrix.platform }}-dist
           path: |
             dist/*.dmg
-            dist/*.zip
             dist/*.exe
+            dist/*.zip
+            dist/*.blockmap
+            dist/latest*.yml
           if-no-files-found: ignore
           retention-days: 7
+
+  # Single job that gathers every platform's output and publishes one
+  # GitHub Release. Runs only for v* tags, after all builds succeed.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.dmg
+            artifacts/**/*.exe
+            artifacts/**/*.zip
+            artifacts/**/*.blockmap
+            artifacts/**/latest*.yml
+          draft: false
+          make_latest: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
