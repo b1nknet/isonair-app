@@ -2,13 +2,18 @@ const channelList = document.getElementById('channel-list');
 const addModal = document.getElementById('add-modal');
 const channelInput = document.getElementById('channel-input');
 const addError = document.getElementById('add-error');
+const refreshBtn = document.getElementById('refresh-btn');
 const countdownEl = document.getElementById('countdown');
+const appEl = document.getElementById('app');
 const opacitySlider = document.getElementById('opacity-slider');
 const opacityValue = document.getElementById('opacity-value');
-const pinBtn = document.getElementById('pin-btn');
+const scaleMinus = document.getElementById('scale-minus');
+const scaleValue = document.getElementById('scale-value');
+const scalePlus = document.getElementById('scale-plus');
 const viewBtn = document.getElementById('view-btn');
 const moreBtn = document.getElementById('more-btn');
 const moreMenu = document.getElementById('more-menu');
+const menuAlwaysOnTop = document.getElementById('menu-always-on-top');
 const menuHideOffline = document.getElementById('menu-hide-offline');
 const updateBanner = document.getElementById('update-banner');
 const updateText = document.getElementById('update-text');
@@ -17,6 +22,10 @@ const updateRestart = document.getElementById('update-restart');
 let alwaysOnTop = true;
 let hideOffline = false;
 let viewMode = 'list'; // 'list' | 'grid'
+
+// Interface zoom levels cycled by the footer scale button.
+const SCALE_STEPS = [0.85, 1, 1.15, 1.3];
+let uiScale = 1;
 
 let channels = [];
 let lastInfos = []; // full list in channel order (pre-filter)
@@ -391,12 +400,12 @@ async function loadAndRender() {
 async function refreshNow() {
   if (isRefreshing) return;
   isRefreshing = true;
-  countdownEl.classList.add('refreshing');
+  refreshBtn.classList.add('refreshing');
   try {
     await loadAndRender();
   } finally {
     isRefreshing = false;
-    countdownEl.classList.remove('refreshing');
+    refreshBtn.classList.remove('refreshing');
     countdown = REFRESH_INTERVAL;
     updateCountdownDisplay();
   }
@@ -482,30 +491,56 @@ channelInput.addEventListener('keydown', (e) => {
 
 // --- titlebar + opacity --------------------------------------------------
 
-document.getElementById('refresh-btn').addEventListener('click', refreshNow);
+refreshBtn.addEventListener('click', refreshNow);
 document.getElementById('close-btn').addEventListener('click', () => window.chzzk.closeApp());
 document.getElementById('minimize-btn').addEventListener('click', () => window.chzzk.minimizeApp());
+
+// At 100% the app background goes fully solid (no translucency / blur);
+// below 100% it stays glassy so the desktop shows through.
+function applyOpaque(pct) {
+  appEl.classList.toggle('opaque', pct >= 100);
+}
 
 opacitySlider.addEventListener('input', () => {
   const pct = Number(opacitySlider.value);
   opacityValue.textContent = `${pct}%`;
   window.chzzk.setOpacity(pct / 100);
+  applyOpaque(pct);
 });
 
 function applyPinState() {
-  pinBtn.classList.toggle('active', alwaysOnTop);
-  pinBtn.title = alwaysOnTop ? '항상 위에 고정됨 (클릭하여 해제)' : '항상 위에 고정 안 됨 (클릭하여 고정)';
+  menuAlwaysOnTop.classList.toggle('active', alwaysOnTop);
 }
 
-pinBtn.addEventListener('click', async () => {
+menuAlwaysOnTop.addEventListener('click', async () => {
   alwaysOnTop = await window.chzzk.setAlwaysOnTop(!alwaysOnTop);
   applyPinState();
 });
 
+// --- interface scale -----------------------------------------------------
+
+function applyScaleLabel() {
+  scaleValue.textContent = `${Math.round(uiScale * 100)}%`;
+  const idx = SCALE_STEPS.indexOf(uiScale);
+  scaleMinus.disabled = idx <= 0;
+  scalePlus.disabled = idx >= SCALE_STEPS.length - 1;
+}
+
+async function stepScale(delta) {
+  let idx = SCALE_STEPS.indexOf(uiScale);
+  if (idx === -1) idx = SCALE_STEPS.indexOf(1); // snap an off-step value to 100%
+  const next = SCALE_STEPS[Math.min(SCALE_STEPS.length - 1, Math.max(0, idx + delta))];
+  if (next === uiScale) return;
+  uiScale = await window.chzzk.setUiScale(next);
+  applyScaleLabel();
+}
+
+scaleMinus.addEventListener('click', () => stepScale(-1));
+scalePlus.addEventListener('click', () => stepScale(1));
+
 // --- view mode + hide offline -------------------------------------------
 
 function applyViewState() {
-  viewBtn.classList.toggle('grid-active', viewMode === 'grid');
   viewBtn.textContent = viewMode === 'grid' ? '☰' : '▦';
   viewBtn.title = viewMode === 'grid' ? '목록 보기로 전환' : '그리드 보기로 전환';
   menuHideOffline.classList.toggle('active', hideOffline);
@@ -606,9 +641,13 @@ async function init() {
   const pct = Math.round((settings.opacity ?? 1) * 100);
   opacitySlider.value = String(pct);
   opacityValue.textContent = `${pct}%`;
+  applyOpaque(pct);
 
   alwaysOnTop = settings.alwaysOnTop ?? true;
   applyPinState();
+
+  uiScale = settings.uiScale ?? 1;
+  applyScaleLabel();
 
   hideOffline = settings.hideOffline ?? false;
   viewMode = settings.viewMode ?? 'list';

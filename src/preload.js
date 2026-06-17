@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('chzzk', {
   setSettings: (partial) => ipcRenderer.invoke('set-settings', partial),
   setOpacity: (opacity) => ipcRenderer.invoke('set-opacity', opacity),
   setAlwaysOnTop: (value) => ipcRenderer.invoke('set-always-on-top', value),
+  setUiScale: (scale) => ipcRenderer.invoke('set-ui-scale', scale),
   exportChannels: () => ipcRenderer.invoke('export-channels'),
   importChannels: () => ipcRenderer.invoke('import-channels'),
   fetchChannelInfo: (channelId) => ipcRenderer.invoke('fetch-channel-info', channelId),

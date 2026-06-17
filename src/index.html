@@ -3,18 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chzzk Widget</title>
+  <title>isonair?</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="app">
     <div id="titlebar">
-      <span id="app-title">치지직 위젯</span>
+      <span id="app-title">isonair?</span>
       <div id="titlebar-btns">
-        <span id="countdown" title="다음 새로고침까지">30s</span>
         <button id="view-btn" title="목록 / 그리드 보기 전환">▦</button>
-        <button id="pin-btn" title="항상 위에 고정">📌</button>
-        <button id="refresh-btn" title="새로고침">↺</button>
+        <button id="refresh-btn" title="새로고침 (다음 자동 새로고침까지 남은 시간)"><span class="refresh-icon">↺</span><span id="countdown">30s</span></button>
         <button id="add-btn" title="채널 추가">+</button>
         <button id="more-btn" title="더보기">⋯</button>
         <button id="minimize-btn">−</button>
@@ -23,6 +21,9 @@
     </div>
 
     <div id="more-menu" class="hidden">
+      <div class="menu-item" id="menu-always-on-top">
+        <span class="menu-check">✓</span><span>항상 위에 고정</span>
+      </div>
       <div class="menu-item" id="menu-hide-offline">
         <span class="menu-check">✓</span><span>오프라인 채널 숨기기</span>
       </div>
@@ -44,6 +45,11 @@
       <span id="opacity-label">투명도</span>
       <input id="opacity-slider" type="range" min="20" max="100" value="100" />
       <span id="opacity-value">100%</span>
+      <div id="scale-control">
+        <button id="scale-minus" title="인터페이스 축소">−</button>
+        <span id="scale-value">100%</span>
+        <button id="scale-plus" title="인터페이스 확대">+</button>
+      </div>
     </div>
 
     <div id="add-modal" class="hidden">

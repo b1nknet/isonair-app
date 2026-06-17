@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS = {
   alwaysOnTop: true,
   hideOffline: false,
   viewMode: 'list', // 'list' | 'grid'
+  uiScale: 1, // webContents zoom factor for the whole interface
 };
 
 function loadJson(file, fallback) {
@@ -109,6 +110,10 @@ function createWindow() {
   });
 
   win.setOpacity(settings.opacity);
+  // Zoom factor only sticks once content has loaded.
+  win.webContents.on('did-finish-load', () => {
+    win.webContents.setZoomFactor(settings.uiScale || 1);
+  });
   win.loadFile(path.join(__dirname, 'index.html'));
 }
 
@@ -189,9 +194,18 @@ ipcMain.handle('set-always-on-top', (_e, value) => {
   return enabled;
 });
 
+ipcMain.handle('set-ui-scale', (_e, scale) => {
+  const clamped = Math.min(2, Math.max(0.5, Number(scale) || 1));
+  const settings = loadSettings();
+  settings.uiScale = clamped;
+  saveJson(SETTINGS_PATH, settings);
+  if (win) win.webContents.setZoomFactor(clamped);
+  return clamped;
+});
+
 // Generic partial-merge for view settings with no window side effects
-// (hideOffline, viewMode). opacity / alwaysOnTop keep their dedicated
-// handlers because they also drive the BrowserWindow.
+// (hideOffline, viewMode). opacity / alwaysOnTop / uiScale keep their
+// dedicated handlers because they also drive the BrowserWindow.
 ipcMain.handle('set-settings', (_e, partial) => {
   const settings = { ...loadSettings(), ...(partial || {}) };
   saveJson(SETTINGS_PATH, settings);
