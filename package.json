@@ -1,5 +1,5 @@
 {
-  "name": "chzzk-electron",
+  "name": "isonair-app",
   "version": "1.1.2",
   "description": "Chzzk stream info widget",
   "main": "src/main.js",
@@ -23,7 +23,7 @@
   "build": {
     "appId": "com.chzzk.widget",
     "productName": "Chzzk Widget",
-    "artifactName": "Chzzk-Widget-${version}-${arch}.${ext}",
+    "artifactName": "isonair-${version}-${arch}.${ext}",
     "files": [
       "src/**/*",
       "package.json"
@@ -35,7 +35,7 @@
       {
         "provider": "github",
         "owner": "b1nknet",
-        "repo": "chzzk-electron"
+        "repo": "isonair-app"
       }
     ],
     "mac": {
@@ -55,7 +55,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "Chzzk-Widget-Setup-${version}.${ext}"
+      "artifactName": "isonair-Setup-${version}.${ext}"
     }
   }
 }
