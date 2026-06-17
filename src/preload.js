@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('chzzk', {
   fetchChannelInfo: (channelId) => ipcRenderer.invoke('fetch-channel-info', channelId),
   fetchAllChannels: (channelIds) => ipcRenderer.invoke('fetch-all-channels', channelIds),
   openChannel: (channelId, isLive) => ipcRenderer.invoke('open-channel', channelId, isLive),
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
   closeApp: () => ipcRenderer.send('close-app'),
   minimizeApp: () => ipcRenderer.send('minimize-app'),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),

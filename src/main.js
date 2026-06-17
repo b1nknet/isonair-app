@@ -307,5 +307,10 @@ ipcMain.handle('open-channel', (_e, channelId, isLive) => {
   shell.openExternal(`https://chzzk.naver.com/${path}`);
 });
 
+ipcMain.handle('open-external', (_e, url) => {
+  // Only allow http(s) URLs to be opened in the user's browser.
+  if (/^https?:\/\//.test(url)) shell.openExternal(url);
+});
+
 ipcMain.on('close-app', () => app.quit());
 ipcMain.on('minimize-app', () => win.minimize());

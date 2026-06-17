@@ -495,6 +495,8 @@ channelInput.addEventListener('keydown', (e) => {
 // --- titlebar + opacity --------------------------------------------------
 
 refreshBtn.addEventListener('click', refreshNow);
+document.getElementById('chzzk-btn').addEventListener('click', () => window.chzzk.openExternal('https://chzzk.naver.com'));
+document.getElementById('github-btn').addEventListener('click', () => window.chzzk.openExternal('https://github.com/b1nknet/isonair-app'));
 document.getElementById('close-btn').addEventListener('click', () => window.chzzk.closeApp());
 document.getElementById('minimize-btn').addEventListener('click', () => window.chzzk.minimizeApp());
 
@@ -577,6 +579,13 @@ document.addEventListener('click', (e) => {
       !moreMenu.contains(e.target) && e.target !== moreBtn) {
     closeMenu();
   }
+});
+
+// The titlebar is a drag region, so the OS swallows its `click` events and the
+// outside-click handler above never fires there. Catch `mousedown` instead so
+// clicking the titlebar still dismisses the menu (but not when re-toggling it).
+document.getElementById('titlebar').addEventListener('mousedown', (e) => {
+  if (e.target !== moreBtn && !moreBtn.contains(e.target)) closeMenu();
 });
 
 // --- export / import -----------------------------------------------------
