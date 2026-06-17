@@ -174,12 +174,29 @@ function setupAutoUpdate() {
 }
 
 ipcMain.handle('check-for-updates', () => {
+  // Only kicks off the actual download in a packaged app. The renderer reports
+  // "up to date / new version" itself via get-latest-version, so with no
+  // updater (dev) we just no-op instead of faking a 'none' status.
   if (autoUpdater) autoUpdater.checkForUpdates().catch(() => {});
-  else sendUpdateStatus('none');
 });
 
 ipcMain.handle('restart-to-update', () => {
   if (autoUpdater) autoUpdater.quitAndInstall();
+});
+
+ipcMain.handle('get-app-version', () => app.getVersion());
+
+// Look up the newest published GitHub release. Works in dev too (independent of
+// electron-updater), so the UI can always show current-vs-latest.
+ipcMain.handle('get-latest-version', async () => {
+  try {
+    const data = await httpsGet('https://api.github.com/repos/b1nknet/isonair-app/releases/latest');
+    const tag = data?.tag_name;
+    if (!tag) return { error: '릴리스를 찾을 수 없습니다.' };
+    return { version: String(tag).replace(/^v/, ''), url: data.html_url ?? null };
+  } catch (err) {
+    return { error: err.message };
+  }
 });
 
 app.whenReady().then(() => {

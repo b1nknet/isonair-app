@@ -18,6 +18,7 @@ const menuHideOffline = document.getElementById('menu-hide-offline');
 const updateBanner = document.getElementById('update-banner');
 const updateText = document.getElementById('update-text');
 const updateRestart = document.getElementById('update-restart');
+const currentVersionEl = document.getElementById('current-version');
 
 let alwaysOnTop = true;
 let hideOffline = false;
@@ -26,6 +27,8 @@ let viewMode = 'list'; // 'list' | 'grid'
 // Interface zoom levels cycled by the footer scale button.
 const SCALE_STEPS = [0.85, 1, 1.15, 1.3];
 let uiScale = 1;
+
+let currentVersion = '';
 
 let channels = [];
 let lastInfos = []; // full list in channel order (pre-filter)
@@ -615,11 +618,36 @@ function showBanner(text, withRestart = false, autoHideMs = 0) {
   }
 }
 
-document.getElementById('menu-update').addEventListener('click', () => {
+// Numeric compare of dotted versions (a vs b): 1 if a>b, -1 if a<b, 0 if equal.
+function compareVersions(a, b) {
+  const pa = String(a).split('.').map(n => parseInt(n, 10) || 0);
+  const pb = String(b).split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d !== 0) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+async function checkUpdates() {
   closeMenu();
   showBanner('업데이트 확인 중...');
-  window.chzzk.checkForUpdates();
-});
+  const latest = await window.chzzk.getLatestVersion();
+  if (latest.error) {
+    showBanner(`업데이트 확인 실패: ${latest.error}`, false, 5000);
+    return;
+  }
+  if (compareVersions(latest.version, currentVersion) > 0) {
+    showBanner(`새 버전 v${latest.version} 사용 가능 (현재 v${currentVersion})`);
+    // Packaged build: trigger the actual download (progress/restart banners
+    // follow via onUpdateStatus). Dev: no-op, so this message stays.
+    window.chzzk.checkForUpdates();
+  } else {
+    showBanner(`최신 버전입니다 (v${currentVersion})`, false, 4000);
+  }
+}
+
+document.getElementById('menu-update').addEventListener('click', checkUpdates);
 
 updateRestart.addEventListener('click', () => window.chzzk.restartToUpdate());
 
@@ -637,6 +665,9 @@ window.chzzk.onUpdateStatus((d) => {
 // --- init ----------------------------------------------------------------
 
 async function init() {
+  currentVersion = await window.chzzk.getAppVersion();
+  currentVersionEl.textContent = `v${currentVersion}`;
+
   const settings = await window.chzzk.getSettings();
   const pct = Math.round((settings.opacity ?? 1) * 100);
   opacitySlider.value = String(pct);

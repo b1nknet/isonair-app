@@ -17,5 +17,7 @@ contextBridge.exposeInMainWorld('chzzk', {
   minimizeApp: () => ipcRenderer.send('minimize-app'),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   restartToUpdate: () => ipcRenderer.invoke('restart-to-update'),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  getLatestVersion: () => ipcRenderer.invoke('get-latest-version'),
   onUpdateStatus: (cb) => ipcRenderer.on('update-status', (_e, data) => cb(data)),
 });

@@ -1,6 +1,6 @@
 {
   "name": "isonair-app",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Chzzk stream info widget",
   "main": "src/main.js",
   "scripts": {
