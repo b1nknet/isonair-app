@@ -12,12 +12,30 @@
       <span id="app-title">치지직 위젯</span>
       <div id="titlebar-btns">
         <span id="countdown" title="다음 새로고침까지">30s</span>
+        <button id="view-btn" title="목록 / 그리드 보기 전환">▦</button>
         <button id="pin-btn" title="항상 위에 고정">📌</button>
         <button id="refresh-btn" title="새로고침">↺</button>
         <button id="add-btn" title="채널 추가">+</button>
+        <button id="more-btn" title="더보기">⋯</button>
         <button id="minimize-btn">−</button>
         <button id="close-btn">×</button>
       </div>
+    </div>
+
+    <div id="more-menu" class="hidden">
+      <div class="menu-item" id="menu-hide-offline">
+        <span class="menu-check">✓</span><span>오프라인 채널 숨기기</span>
+      </div>
+      <div class="menu-divider"></div>
+      <div class="menu-item" id="menu-export">채널 내보내기 (JSON)</div>
+      <div class="menu-item" id="menu-import">채널 가져오기 (JSON)</div>
+      <div class="menu-divider"></div>
+      <div class="menu-item" id="menu-update">업데이트 확인</div>
+    </div>
+
+    <div id="update-banner" class="hidden">
+      <span id="update-text"></span>
+      <button id="update-restart" class="hidden">재시작</button>
     </div>
 
     <div id="channel-list"></div>

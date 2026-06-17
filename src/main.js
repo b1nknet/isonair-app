@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
@@ -6,7 +6,12 @@ const https = require('https');
 const CHANNELS_PATH = path.join(app.getPath('userData'), 'channels.json');
 const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
 
-const DEFAULT_SETTINGS = { opacity: 1, alwaysOnTop: true };
+const DEFAULT_SETTINGS = {
+  opacity: 1,
+  alwaysOnTop: true,
+  hideOffline: false,
+  viewMode: 'list', // 'list' | 'grid'
+};
 
 function loadJson(file, fallback) {
   try {
@@ -107,7 +112,53 @@ function createWindow() {
   win.loadFile(path.join(__dirname, 'index.html'));
 }
 
-app.whenReady().then(createWindow);
+// --- GitHub auto-update ---------------------------------------------------
+// Uses electron-updater against the `publish` config in package.json
+// (GitHub provider). Only meaningful in a packaged, installed app — in a
+// dev run there is no update feed, so we no-op.
+
+let autoUpdater = null;
+
+function sendUpdateStatus(status, payload) {
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('update-status', { status, ...payload });
+  }
+}
+
+function setupAutoUpdate() {
+  if (!app.isPackaged) return; // nothing to update against in dev
+  try {
+    ({ autoUpdater } = require('electron-updater'));
+  } catch {
+    return; // dependency not installed
+  }
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('checking-for-update', () => sendUpdateStatus('checking'));
+  autoUpdater.on('update-available', (info) => sendUpdateStatus('available', { version: info?.version }));
+  autoUpdater.on('update-not-available', () => sendUpdateStatus('none'));
+  autoUpdater.on('download-progress', (p) => sendUpdateStatus('downloading', { percent: Math.round(p?.percent ?? 0) }));
+  autoUpdater.on('update-downloaded', (info) => sendUpdateStatus('downloaded', { version: info?.version }));
+  autoUpdater.on('error', (err) => sendUpdateStatus('error', { message: String(err?.message || err) }));
+
+  autoUpdater.checkForUpdates().catch(() => {});
+}
+
+ipcMain.handle('check-for-updates', () => {
+  if (autoUpdater) autoUpdater.checkForUpdates().catch(() => {});
+  else sendUpdateStatus('none');
+});
+
+ipcMain.handle('restart-to-update', () => {
+  if (autoUpdater) autoUpdater.quitAndInstall();
+});
+
+app.whenReady().then(() => {
+  createWindow();
+  setupAutoUpdate();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -136,6 +187,51 @@ ipcMain.handle('set-always-on-top', (_e, value) => {
   saveJson(SETTINGS_PATH, settings);
   if (win) win.setAlwaysOnTop(enabled);
   return enabled;
+});
+
+// Generic partial-merge for view settings with no window side effects
+// (hideOffline, viewMode). opacity / alwaysOnTop keep their dedicated
+// handlers because they also drive the BrowserWindow.
+ipcMain.handle('set-settings', (_e, partial) => {
+  const settings = { ...loadSettings(), ...(partial || {}) };
+  saveJson(SETTINGS_PATH, settings);
+  return settings;
+});
+
+ipcMain.handle('export-channels', async () => {
+  const { canceled, filePath } = await dialog.showSaveDialog(win, {
+    title: '채널 목록 내보내기',
+    defaultPath: 'chzzk-channels.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePath) return { ok: false, canceled: true };
+  const payload = {
+    type: 'chzzk-widget-channels',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    channels: loadChannels(),
+  };
+  fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8');
+  return { ok: true, filePath, count: payload.channels.length };
+});
+
+ipcMain.handle('import-channels', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+    title: '채널 목록 가져오기',
+    properties: ['openFile'],
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePaths?.[0]) return { ok: false, canceled: true };
+  try {
+    const raw = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
+    // Accept either our export wrapper or a bare array of channel ids.
+    const list = Array.isArray(raw) ? raw : raw.channels;
+    if (!Array.isArray(list)) return { ok: false, error: '잘못된 파일 형식입니다.' };
+    const channels = [...new Set(list.filter(id => typeof id === 'string' && /^[a-zA-Z0-9]+$/.test(id)))];
+    return { ok: true, channels };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 });
 
 ipcMain.handle('fetch-channel-info', async (_e, channelId) => {

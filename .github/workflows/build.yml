@@ -19,7 +19,7 @@ jobs:
         include:
           - os: macos-latest
             platform: mac
-            args: --mac --x64 --arm64
+            args: --mac --arm64
           - os: windows-latest
             platform: win
             args: --win --x64
@@ -33,7 +33,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies

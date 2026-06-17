@@ -200,6 +200,7 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0; /* allow shrink within the flex header so it can clip/scroll */
 }
 
 .live-badge {
@@ -220,6 +221,26 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 2px;
+}
+
+/* Horizontal auto-scroll for overflowing names / titles. The .marquee class
+   is added by JS only when the text actually overflows its container. */
+.marquee-track {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.marquee .marquee-track {
+  animation: marquee-scroll var(--marquee-dur, 8s) linear infinite alternate;
+}
+
+@keyframes marquee-scroll {
+  0%, 12%   { transform: translateX(0); }
+  88%, 100% { transform: translateX(var(--marquee-shift, 0)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee .marquee-track { animation: none; }
 }
 
 .channel-meta {
@@ -420,3 +441,188 @@ html, body {
   font-size: 11px;
 }
 #add-error.hidden { display: none; }
+
+/* View toggle active state */
+#view-btn.grid-active {
+  background: rgba(0, 196, 113, 0.18);
+  color: var(--text);
+}
+
+/* More menu */
+#more-menu {
+  position: absolute;
+  top: 38px;
+  right: 8px;
+  z-index: 20;
+  background: rgba(30, 30, 44, 0.99);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px;
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+#more-menu.hidden { display: none; }
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.menu-item:hover { background: rgba(255,255,255,0.08); }
+
+.menu-check {
+  width: 12px;
+  color: var(--accent);
+  font-size: 11px;
+  visibility: hidden;
+}
+
+.menu-item.active .menu-check { visibility: visible; }
+
+.menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 6px;
+}
+
+/* Update banner */
+#update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 12px;
+  font-size: 11px;
+  color: var(--text);
+  background: rgba(0, 196, 113, 0.14);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#update-banner.hidden { display: none; }
+
+#update-restart {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+#update-restart.hidden { display: none; }
+
+/* Grid view (icon & status only) */
+#channel-list.grid-view {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  align-content: start;
+}
+
+.grid-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 4px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.grid-card:hover { background: rgba(255,255,255,0.09); }
+.grid-card:hover .remove-btn { opacity: 1; }
+.grid-card.live { border-color: rgba(255, 78, 78, 0.5); }
+
+.grid-avatar-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+}
+
+.grid-card .channel-avatar,
+.grid-card .channel-avatar-placeholder {
+  width: 44px;
+  height: 44px;
+}
+
+.grid-card.offline .channel-avatar,
+.grid-card.offline .channel-avatar-placeholder {
+  filter: grayscale(0.8) opacity(0.55);
+}
+
+.grid-name {
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--text);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  padding: 0 2px;
+}
+
+.grid-card.offline .grid-name { color: var(--muted); }
+
+.status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+
+.status-dot.live { background: var(--live); }
+.status-dot.offline { background: #5a5a6e; }
+
+/* Grid hover tooltip */
+#grid-tooltip {
+  position: fixed;
+  z-index: 50;
+  max-width: 240px;
+  padding: 8px 10px;
+  background: rgba(20, 20, 30, 0.98);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+  pointer-events: none;
+}
+
+#grid-tooltip.hidden { display: none; }
+
+#grid-tooltip .tt-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+#grid-tooltip .tt-title {
+  font-size: 11px;
+  color: var(--text);
+  margin-top: 3px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+#grid-tooltip .tt-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
