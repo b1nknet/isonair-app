@@ -1,7 +1,7 @@
 const channelList = document.getElementById('channel-list');
 const addBar = document.getElementById('add-bar');
 const channelInput = document.getElementById('channel-input');
-const addError = document.getElementById('add-error');
+const errorToast = document.getElementById('error-toast');
 const refreshBtn = document.getElementById('refresh-btn');
 const countdownEl = document.getElementById('countdown');
 const appEl = document.getElementById('app');
@@ -447,9 +447,23 @@ function startTick() {
 
 // --- add channel bar -----------------------------------------------------
 
+// Error popup centered over the whole window; auto-hides after a few seconds.
+let errorToastTimer = null;
+function showAddError(msg) {
+  errorToast.textContent = msg;
+  errorToast.classList.remove('hidden');
+  clearTimeout(errorToastTimer);
+  errorToastTimer = setTimeout(() => errorToast.classList.add('hidden'), 3500);
+}
+
+function hideAddError() {
+  errorToast.classList.add('hidden');
+  clearTimeout(errorToastTimer);
+}
+
 function closeAddBar() {
   addBar.classList.add('hidden');
-  addError.classList.add('hidden');
+  hideAddError();
 }
 
 document.getElementById('add-btn').addEventListener('click', () => {
@@ -458,7 +472,7 @@ document.getElementById('add-btn').addEventListener('click', () => {
     closeAddBar();
     return;
   }
-  addError.classList.add('hidden');
+  hideAddError();
   channelInput.value = '';
   addBar.classList.remove('hidden');
   setTimeout(() => channelInput.focus(), 50);
@@ -472,23 +486,20 @@ const CHANNEL_ID_PATTERN = /^[a-z0-9]{32}$/;
 async function confirmAdd() {
   const id = extractChannelId(channelInput.value);
   if (!id) {
-    addError.textContent = '올바른 채널 ID 또는 URL을 입력하세요.';
-    addError.classList.remove('hidden');
+    showAddError('올바른 채널 ID 또는 URL을 입력하세요.');
     return;
   }
   if (!CHANNEL_ID_PATTERN.test(id)) {
-    addError.textContent = '채널 ID는 32자리 영소문자·숫자여야 합니다.';
-    addError.classList.remove('hidden');
+    showAddError('채널 ID는 32자리 영소문자·숫자여야 합니다.');
     return;
   }
   if (channels.includes(id)) {
-    addError.textContent = '이미 추가된 채널입니다.';
-    addError.classList.remove('hidden');
+    showAddError('이미 추가된 채널입니다.');
     return;
   }
 
   const confirmBtn = document.getElementById('add-confirm-btn');
-  addError.classList.add('hidden');
+  hideAddError();
   confirmBtn.textContent = '확인 중...';
   confirmBtn.disabled = true;
 
@@ -497,8 +508,7 @@ async function confirmAdd() {
   confirmBtn.disabled = false;
 
   if (info.error) {
-    addError.textContent = `채널을 찾을 수 없습니다: ${info.error}`;
-    addError.classList.remove('hidden');
+    showAddError(`채널을 찾을 수 없습니다: ${info.error}`);
     return;
   }
 
