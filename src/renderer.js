@@ -1,7 +1,7 @@
 const channelList = document.getElementById('channel-list');
-const addModal = document.getElementById('add-modal');
+const addBar = document.getElementById('add-bar');
 const channelInput = document.getElementById('channel-input');
-const addError = document.getElementById('add-error');
+const errorBanner = document.getElementById('error-banner');
 const refreshBtn = document.getElementById('refresh-btn');
 const countdownEl = document.getElementById('countdown');
 const appEl = document.getElementById('app');
@@ -445,58 +445,104 @@ function startTick() {
   }, 1000);
 }
 
-// --- add channel modal ---------------------------------------------------
+// --- add channel bar -----------------------------------------------------
+
+// Error banner between the titlebar and the input bar; auto-hides after a few seconds.
+let errorBannerTimer = null;
+function showAddError(msg) {
+  errorBanner.textContent = msg;
+  errorBanner.classList.remove('hidden');
+  clearTimeout(errorBannerTimer);
+  errorBannerTimer = setTimeout(() => errorBanner.classList.add('hidden'), 3500);
+}
+
+function hideAddError() {
+  errorBanner.classList.add('hidden');
+  clearTimeout(errorBannerTimer);
+}
+
+function closeAddBar() {
+  addBar.classList.add('hidden');
+  hideAddError();
+}
 
 document.getElementById('add-btn').addEventListener('click', () => {
-  addError.classList.add('hidden');
+  // Toggle the inline input bar below the titlebar.
+  if (!addBar.classList.contains('hidden')) {
+    closeAddBar();
+    return;
+  }
+  hideAddError();
   channelInput.value = '';
-  addModal.classList.remove('hidden');
+  addBar.classList.remove('hidden');
   setTimeout(() => channelInput.focus(), 50);
 });
 
-document.getElementById('add-cancel-btn').addEventListener('click', () => {
-  addModal.classList.add('hidden');
-});
+document.getElementById('add-cancel-btn').addEventListener('click', closeAddBar);
 
-async function confirmAdd() {
-  const id = extractChannelId(channelInput.value);
+// Chzzk channel ids are 32-char lowercase hex strings.
+const CHANNEL_ID_PATTERN = /^[a-z0-9]{32}$/;
+
+// Validate `rawText` (a channel id or chzzk URL), look the channel up, and add
+// it. Shared by the input-field confirm and the clipboard-paste shortcut.
+// Returns true if a channel was added. `onBusy(true|false)` brackets the fetch
+// so the caller can show a loading state.
+async function tryAddChannel(rawText, onBusy) {
+  const id = extractChannelId(rawText);
   if (!id) {
-    addError.textContent = '올바른 채널 ID 또는 URL을 입력하세요.';
-    addError.classList.remove('hidden');
-    return;
+    showAddError('올바른 채널 ID 또는 URL을 입력하세요.');
+    return false;
+  }
+  if (!CHANNEL_ID_PATTERN.test(id)) {
+    showAddError('채널 ID는 32자리 영소문자·숫자여야 합니다.');
+    return false;
   }
   if (channels.includes(id)) {
-    addError.textContent = '이미 추가된 채널입니다.';
-    addError.classList.remove('hidden');
-    return;
+    showAddError('이미 추가된 채널입니다.');
+    return false;
   }
 
-  const confirmBtn = document.getElementById('add-confirm-btn');
-  addError.classList.add('hidden');
-  confirmBtn.textContent = '확인 중...';
-  confirmBtn.disabled = true;
-
+  hideAddError();
+  onBusy?.(true);
   const info = await window.chzzk.fetchChannelInfo(id);
-  confirmBtn.textContent = '추가';
-  confirmBtn.disabled = false;
+  onBusy?.(false);
 
   if (info.error) {
-    addError.textContent = `채널을 찾을 수 없습니다: ${info.error}`;
-    addError.classList.remove('hidden');
-    return;
+    showAddError(`채널을 찾을 수 없습니다: ${info.error}`);
+    return false;
   }
 
   channels.push(id);
   await window.chzzk.saveChannels(channels);
-  addModal.classList.add('hidden');
   await refreshNow();
+  return true;
+}
+
+async function confirmAdd() {
+  const confirmBtn = document.getElementById('add-confirm-btn');
+  const ok = await tryAddChannel(channelInput.value, (busy) => {
+    confirmBtn.textContent = busy ? '확인 중...' : '추가';
+    confirmBtn.disabled = busy;
+  });
+  if (ok) closeAddBar();
 }
 
 document.getElementById('add-confirm-btn').addEventListener('click', confirmAdd);
 
+// Paste shortcut: Ctrl/Cmd+V anywhere (except inside the input field) adds the
+// clipboard text as a channel without opening the input bar.
+document.addEventListener('paste', async (e) => {
+  if (document.activeElement === channelInput) return; // let it paste into the field
+  const text = (e.clipboardData?.getData('text') ?? '').trim();
+  if (!text) return;
+  e.preventDefault();
+  const ok = await tryAddChannel(text);
+  if (ok) showBanner('채널을 추가했습니다', false, 2500);
+});
+
 channelInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') confirmAdd();
-  if (e.key === 'Escape') addModal.classList.add('hidden');
+  if (e.key === 'Escape') closeAddBar();
 });
 
 // --- titlebar + opacity --------------------------------------------------

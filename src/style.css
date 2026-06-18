@@ -471,44 +471,34 @@ html, body {
   cursor: pointer;
 }
 
-/* Add modal */
-#add-modal {
-  position: absolute;
-  inset: 0;
-  background: rgba(10,10,16,0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius);
-  backdrop-filter: blur(6px);
-  z-index: 10;
-}
-
-#add-modal.hidden { display: none; }
-
-#add-modal-inner {
-  background: rgba(28,28,42,0.98);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 18px;
-  width: 270px;
+/* Add bar — inline ID input docked below the titlebar */
+#add-bar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
-#add-modal-inner p {
-  font-size: 12px;
-  color: var(--muted);
+#add-bar.hidden { display: none; }
+
+#add-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 #channel-input {
+  flex: 1;
+  min-width: 0;
   background: rgba(255,255,255,0.06);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
   font-size: 13px;
-  padding: 7px 10px;
+  padding: 6px 9px;
   outline: none;
   transition: border-color 0.15s;
 }
@@ -517,39 +507,55 @@ html, body {
   border-color: rgba(255,255,255,0.25);
 }
 
-#add-modal-btns {
-  display: flex;
-  gap: 8px;
-}
-
-#add-modal-btns button {
-  flex: 1;
-  padding: 7px;
+#add-confirm-btn {
+  flex-shrink: 0;
+  padding: 6px 12px;
   border-radius: 6px;
   border: none;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  background: var(--accent);
+  color: #000;
   transition: opacity 0.15s;
 }
 
-#add-confirm-btn {
-  background: var(--accent);
-  color: #000;
+#add-cancel-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  background: rgba(255,255,255,0.08);
+  color: var(--muted);
+  transition: background 0.15s, color 0.15s;
 }
 
-#add-cancel-btn {
-  background: rgba(255,255,255,0.08);
+#add-confirm-btn:hover { opacity: 0.85; }
+#add-cancel-btn:hover {
+  background: rgba(255,255,255,0.14);
   color: var(--text);
 }
 
-#add-modal-btns button:hover { opacity: 0.85; }
-
-#add-error {
-  color: var(--live);
+/* Error banner — same layout as the update banner, red tint instead of green */
+#error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 12px;
   font-size: 11px;
+  color: var(--text);
+  background: rgba(255, 78, 78, 0.14);
+  border-bottom: 1px solid var(--border);
+  word-break: keep-all;
+  flex-shrink: 0;
 }
-#add-error.hidden { display: none; }
+
+#error-banner.hidden { display: none; }
 
 /* View toggle active state */
 #view-btn.grid-active {
