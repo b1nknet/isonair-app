@@ -49,6 +49,8 @@
       <div class="menu-item" id="menu-export">채널 내보내기 (JSON)</div>
       <div class="menu-item" id="menu-import">채널 가져오기 (JSON)</div>
       <div class="menu-divider"></div>
+      <div class="menu-item menu-item-danger" id="menu-remove-all">모든 채널 삭제</div>
+      <div class="menu-divider"></div>
       <div class="menu-item" id="menu-update">업데이트 확인</div>
       <div class="menu-divider"></div>
       <div class="menu-version">
@@ -72,6 +74,17 @@
         <button id="scale-minus" title="인터페이스 축소">−</button>
         <span id="scale-value">100%</span>
         <button id="scale-plus" title="인터페이스 확대">+</button>
+      </div>
+    </div>
+
+    <div id="confirm-overlay" class="hidden">
+      <div id="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div id="confirm-title">모든 채널 삭제</div>
+        <div id="confirm-message"></div>
+        <div id="confirm-actions">
+          <button id="confirm-cancel">취소</button>
+          <button id="confirm-ok" class="danger">삭제</button>
+        </div>
       </div>
     </div>
   </div>

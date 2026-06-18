@@ -641,6 +641,42 @@ document.getElementById('titlebar').addEventListener('mousedown', (e) => {
   if (e.target !== moreBtn && !moreBtn.contains(e.target)) closeMenu();
 });
 
+// --- in-app confirm dialog ----------------------------------------------
+
+// A promise-based modal that resolves true on 삭제, false on 취소 / overlay
+// click / Esc. Reused in place of the OS-native confirm dialog.
+const confirmOverlay = document.getElementById('confirm-overlay');
+const confirmMessage = document.getElementById('confirm-message');
+const confirmOkBtn = document.getElementById('confirm-ok');
+const confirmCancelBtn = document.getElementById('confirm-cancel');
+
+function confirmDialog(message) {
+  confirmMessage.textContent = message;
+  confirmOverlay.classList.remove('hidden');
+  confirmOkBtn.focus();
+  return new Promise((resolve) => {
+    const done = (result) => {
+      confirmOverlay.classList.add('hidden');
+      confirmOkBtn.removeEventListener('click', onOk);
+      confirmCancelBtn.removeEventListener('click', onCancel);
+      confirmOverlay.removeEventListener('mousedown', onOverlay);
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    };
+    const onOk = () => done(true);
+    const onCancel = () => done(false);
+    const onOverlay = (e) => { if (e.target === confirmOverlay) done(false); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') done(false);
+      else if (e.key === 'Enter') done(true);
+    };
+    confirmOkBtn.addEventListener('click', onOk);
+    confirmCancelBtn.addEventListener('click', onCancel);
+    confirmOverlay.addEventListener('mousedown', onOverlay);
+    document.addEventListener('keydown', onKey);
+  });
+}
+
 // --- export / import -----------------------------------------------------
 
 document.getElementById('menu-export').addEventListener('click', async () => {
@@ -665,6 +701,20 @@ document.getElementById('menu-import').addEventListener('click', async () => {
   await window.chzzk.saveChannels(channels);
   await refreshNow();
   showBanner(`${channels.length - before}개 채널을 가져왔습니다`, false, 3000);
+});
+
+document.getElementById('menu-remove-all').addEventListener('click', async () => {
+  closeMenu();
+  if (channels.length === 0) return;
+  const ok = await confirmDialog(
+    `${channels.length}개 채널이 목록에서 제거됩니다. 이 작업은 되돌릴 수 없습니다.`
+  );
+  if (!ok) return;
+  const removed = channels.length;
+  channels = [];
+  await window.chzzk.saveChannels(channels);
+  await loadAndRender();
+  showBanner(`${removed}개 채널을 삭제했습니다`, false, 3000);
 });
 
 // --- updates -------------------------------------------------------------

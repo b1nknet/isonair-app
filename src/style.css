@@ -601,6 +601,9 @@ html, body {
 
 .menu-item.active .menu-check { visibility: visible; }
 
+.menu-item-danger { color: #ff6b6b; }
+.menu-item-danger:hover { background: rgba(255, 107, 107, 0.12); }
+
 .menu-version {
   display: flex;
   align-items: center;
@@ -756,3 +759,66 @@ html, body {
   color: var(--muted);
   margin-top: 3px;
 }
+
+/* --- in-app confirm dialog --- */
+#confirm-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+#confirm-overlay.hidden { display: none; }
+
+#confirm-dialog {
+  width: 230px;
+  max-width: calc(100% - 32px);
+  background: rgba(30, 30, 44, 0.99);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+#confirm-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+#confirm-message {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+#confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+#confirm-actions button {
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+}
+
+#confirm-actions button:hover { background: rgba(255, 255, 255, 0.12); }
+
+#confirm-actions button.danger {
+  background: #d64545;
+  border-color: #d64545;
+  color: #fff;
+}
+
+#confirm-actions button.danger:hover { background: #c23b3b; }
