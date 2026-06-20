@@ -32,6 +32,7 @@ const DEFAULT_SETTINGS = {
   opacity: 1,
   alwaysOnTop: true,
   hideOffline: false,
+  favorites: [], // channel ids pinned to a separate group at the top
   sortByLiveTime: false, // order live channels by start time, offline by end time
   viewMode: 'list', // 'list' | 'grid'
   uiScale: 1, // webContents zoom factor for the whole interface

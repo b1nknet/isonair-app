@@ -23,6 +23,7 @@ const currentVersionEl = document.getElementById('current-version');
 
 let alwaysOnTop = true;
 let hideOffline = false;
+let favorites = []; // channel ids pinned to a separate group at the top
 let sortByLiveTime = false; // order live by start time, offline by end time
 let viewMode = 'list'; // 'list' | 'grid'
 
@@ -130,6 +131,10 @@ function wireCard(card, info) {
     if (e.target.classList.contains('remove-btn')) return;
     window.chzzk.openChannel(info.channelId, info.isLive);
   });
+  card.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    showContextMenu(e, info.channelId);
+  });
   const rm = card.querySelector('.remove-btn');
   if (rm) rm.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -183,12 +188,37 @@ function sortInfos(infos) {
   return [...live, ...offline];
 }
 
-// Apply the current view-mode + hide-offline filter to lastInfos and draw.
+function isFavorite(id) {
+  return favorites.includes(id);
+}
+
+function appendSection(text) {
+  const el = document.createElement('div');
+  el.className = 'section-header';
+  el.textContent = text;
+  channelList.appendChild(el);
+}
+
+function appendDivider() {
+  const el = document.createElement('div');
+  el.className = 'section-divider';
+  channelList.appendChild(el);
+}
+
+// Split lastInfos into a favorites group (always shown) and the rest (subject to
+// hide-offline), order each group, then draw with a 즐겨찾기 header + divider.
 function render() {
   hideTooltip();
-  const visible = hideOffline ? lastInfos.filter(i => i.isLive) : lastInfos;
-  const ordered = sortByLiveTime ? sortInfos(visible) : visible;
-  const useGrid = viewMode === 'grid' && visible.length > 0;
+  let favInfos = lastInfos.filter(i => isFavorite(i.channelId));
+  let restInfos = lastInfos.filter(i => !isFavorite(i.channelId));
+  if (hideOffline) restInfos = restInfos.filter(i => i.isLive);
+  if (sortByLiveTime) {
+    favInfos = sortInfos(favInfos);
+    restInfos = sortInfos(restInfos);
+  }
+
+  const total = favInfos.length + restInfos.length;
+  const useGrid = viewMode === 'grid' && total > 0;
   channelList.classList.toggle('grid-view', useGrid);
   channelList.innerHTML = '';
 
@@ -200,7 +230,7 @@ function render() {
       </div>`;
     return;
   }
-  if (visible.length === 0) {
+  if (total === 0) {
     channelList.innerHTML = `
       <div class="empty-state">
         <div>라이브 중인 채널이 없습니다</div>
@@ -209,8 +239,13 @@ function render() {
     return;
   }
 
-  if (viewMode === 'grid') renderGrid(ordered);
-  else renderList(ordered);
+  const renderGroup = viewMode === 'grid' ? renderGrid : renderList;
+  if (favInfos.length > 0) {
+    appendSection('즐겨찾기');
+    renderGroup(favInfos);
+    if (restInfos.length > 0) appendDivider();
+  }
+  renderGroup(restInfos);
 }
 
 function renderList(infos) {
@@ -439,7 +474,20 @@ async function refreshNow() {
 async function removeChannel(channelId) {
   channels = channels.filter(id => id !== channelId);
   await window.chzzk.saveChannels(channels);
+  if (isFavorite(channelId)) {
+    favorites = favorites.filter(id => id !== channelId);
+    await window.chzzk.setSettings({ favorites });
+  }
   await loadAndRender();
+}
+
+// Pin/unpin a channel to the 즐겨찾기 group. Data is unchanged, so just persist
+// the favorites list and re-render from cache (no refetch).
+async function toggleFavorite(channelId) {
+  if (isFavorite(channelId)) favorites = favorites.filter(id => id !== channelId);
+  else favorites.push(channelId);
+  await window.chzzk.setSettings({ favorites });
+  render();
 }
 
 function updateCountdownDisplay() {
@@ -668,6 +716,45 @@ document.getElementById('titlebar').addEventListener('mousedown', (e) => {
   if (e.target !== moreBtn && !moreBtn.contains(e.target)) closeMenu();
 });
 
+// --- card context menu (right-click to favorite) -------------------------
+
+const contextMenu = document.getElementById('context-menu');
+const ctxFavorite = document.getElementById('ctx-favorite');
+let ctxTargetId = null;
+
+function closeContextMenu() {
+  contextMenu.classList.add('hidden');
+  ctxTargetId = null;
+}
+
+function showContextMenu(e, channelId) {
+  ctxTargetId = channelId;
+  ctxFavorite.textContent = isFavorite(channelId) ? '즐겨찾기 해제' : '즐겨찾기 추가';
+  contextMenu.classList.remove('hidden');
+  // Clamp to the viewport so the menu never spills off-screen.
+  const { offsetWidth: w, offsetHeight: h } = contextMenu;
+  const x = Math.min(e.clientX, window.innerWidth - w - 4);
+  const y = Math.min(e.clientY, window.innerHeight - h - 4);
+  contextMenu.style.left = `${Math.max(4, x)}px`;
+  contextMenu.style.top = `${Math.max(4, y)}px`;
+}
+
+ctxFavorite.addEventListener('click', async () => {
+  const id = ctxTargetId;
+  closeContextMenu();
+  if (id) await toggleFavorite(id);
+});
+
+document.addEventListener('click', (e) => {
+  if (!contextMenu.classList.contains('hidden') && !contextMenu.contains(e.target)) {
+    closeContextMenu();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeContextMenu();
+});
+channelList.addEventListener('scroll', closeContextMenu);
+
 // --- in-app confirm dialog ----------------------------------------------
 
 // A promise-based modal that resolves true on 삭제, false on 취소 / overlay
@@ -740,6 +827,10 @@ document.getElementById('menu-remove-all').addEventListener('click', async () =>
   const removed = channels.length;
   channels = [];
   await window.chzzk.saveChannels(channels);
+  if (favorites.length > 0) {
+    favorites = [];
+    await window.chzzk.setSettings({ favorites });
+  }
   await loadAndRender();
   showBanner(`${removed}개 채널을 삭제했습니다`, false, 3000);
 });
@@ -850,6 +941,8 @@ async function init() {
 
   sortByLiveTime = settings.sortByLiveTime ?? false;
   applySortState();
+
+  favorites = Array.isArray(settings.favorites) ? settings.favorites : [];
 
   channels = await window.chzzk.getChannels();
   updateCountdownDisplay();

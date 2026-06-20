@@ -610,6 +610,40 @@ html, body {
 .menu-item-danger { color: #ff6b6b; }
 .menu-item-danger:hover { background: rgba(255, 107, 107, 0.12); }
 
+/* Card context menu (right-click) — reuses .menu-item, positioned from JS */
+#context-menu {
+  position: fixed;
+  z-index: 30;
+  background: rgba(30, 30, 44, 0.99);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px;
+  min-width: 130px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+#context-menu.hidden { display: none; }
+
+/* Favorites / section grouping */
+.section-header {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  padding: 4px 4px 1px;
+}
+
+.section-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 2px;
+}
+
+#channel-list.grid-view .section-header,
+#channel-list.grid-view .section-divider {
+  grid-column: 1 / -1;
+}
+
 .menu-version {
   display: flex;
   align-items: center;
