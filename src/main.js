@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
@@ -323,6 +323,10 @@ ipcMain.handle('open-channel', (_e, channelId, isLive) => {
   // channel home page.
   const path = isLive ? `live/${channelId}` : channelId;
   shell.openExternal(`https://chzzk.naver.com/${path}`);
+});
+
+ipcMain.handle('copy-to-clipboard', (_e, text) => {
+  clipboard.writeText(String(text ?? ''));
 });
 
 ipcMain.handle('open-external', (_e, url) => {

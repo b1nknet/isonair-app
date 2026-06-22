@@ -720,6 +720,8 @@ document.getElementById('titlebar').addEventListener('mousedown', (e) => {
 
 const contextMenu = document.getElementById('context-menu');
 const ctxFavorite = document.getElementById('ctx-favorite');
+const ctxCopyId = document.getElementById('ctx-copy-id');
+const ctxCopyUrl = document.getElementById('ctx-copy-url');
 let ctxTargetId = null;
 
 function closeContextMenu() {
@@ -743,6 +745,22 @@ ctxFavorite.addEventListener('click', async () => {
   const id = ctxTargetId;
   closeContextMenu();
   if (id) await toggleFavorite(id);
+});
+
+ctxCopyId.addEventListener('click', async () => {
+  const id = ctxTargetId;
+  closeContextMenu();
+  if (!id) return;
+  await window.chzzk.copyToClipboard(id);
+  showBanner('채널 ID를 복사했습니다', false, 2000);
+});
+
+ctxCopyUrl.addEventListener('click', async () => {
+  const id = ctxTargetId;
+  closeContextMenu();
+  if (!id) return;
+  await window.chzzk.copyToClipboard(`https://chzzk.naver.com/${id}`);
+  showBanner('채널 URL을 복사했습니다', false, 2000);
 });
 
 document.addEventListener('click', (e) => {
